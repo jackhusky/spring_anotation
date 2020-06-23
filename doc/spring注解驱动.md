@@ -26,6 +26,8 @@
   * [ApplicationListener 和@EventListener](#applicationlistener-%E5%92%8Ceventlistener)
   * [配置以及原理](#%E9%85%8D%E7%BD%AE%E4%BB%A5%E5%8F%8A%E5%8E%9F%E7%90%86)
   * [Spring容器创建过程](#spring%E5%AE%B9%E5%99%A8%E5%88%9B%E5%BB%BA%E8%BF%87%E7%A8%8B)
+* [SpringBoot运行原理](#springboot%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86)
+  * [自定义starter](#%E8%87%AA%E5%AE%9A%E4%B9%89starter)
 
 # 容器
 
@@ -963,3 +965,286 @@ Spring容器的refresh()方法
 	4、LiveBeansView.registerApplicationContext(this);
 ```
 
+# SpringBoot运行原理
+
+1、创建SpringApplication对象
+
+```java
+public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
+    this.resourceLoader = resourceLoader;
+    Assert.notNull(primarySources, "PrimarySources must not be null");
+    // 保存主配置类
+    this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+    // 判断是否是一个web应用
+    this.webApplicationType = WebApplicationType.deduceFromClasspath();
+    // 从类路径下找到META-INF/spring.factories配置的所有org.springframework.boot.context.ApplicationContextInitializer并保存起来
+    setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+    // 从类路径下找到META-INF/spring.factories配置的所有ApplicationListener保存起来
+    setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+    // 找到有main方法的配置类保存起来
+    this.mainApplicationClass = deduceMainApplicationClass();
+}
+```
+
+2、运行run方法
+
+```java
+public ConfigurableApplicationContext run(String... args) {
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+    ConfigurableApplicationContext context = null;
+    Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
+    configureHeadlessProperty();
+    // 从类路径下找到META-INF/spring.factories配置的SpringApplicationRunListener
+    SpringApplicationRunListeners listeners = getRunListeners(args);
+    // 回调上一步SpringApplicationRunListener的starting()方法
+    listeners.starting();
+    try {
+        // 封装命令行参数
+        ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+        // 准备环境,并回调SpringApplicationRunListener的environmentPrepared()方法,表示环境准备完成
+        ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
+        configureIgnoreBeanInfo(environment);
+        Banner printedBanner = printBanner(environment);
+        // 创建ConfigurableApplicationContext,判断创建是不是web的IOC容器
+        context = createApplicationContext();
+        // 从类路径下META-INF/spring.factories找到所有org.springframework.boot.SpringBootExceptionReporter并保存起来
+        exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
+                                                         new Class[] { ConfigurableApplicationContext.class }, context);
+        // 准备上下文环境:将environment保存,回调之前保存的所有ApplicationContextInitializer的initialize()方法,回调之前保存的所有SpringApplicationRunListener的contextPrepared()方法,最后回调SpringApplicationRunListener的contextLoaded()方法
+        prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+        // Spring的创建过程,如果是web应用还会创建嵌入式的Tomcat
+        refreshContext(context);
+        // 空方法
+        afterRefresh(context, applicationArguments);
+        stopWatch.stop();
+        if (this.logStartupInfo) {
+            new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), stopWatch);
+        }
+        // 回调SpringApplicationRunListener的started();
+        listeners.started(context);
+        // 从IOC容器中获取所有的ApplicationRunner和CommandLineRunner并依次回调run()方法
+        callRunners(context, applicationArguments);
+    }
+    catch (Throwable ex) {
+        handleRunFailure(context, ex, exceptionReporters, listeners);
+        throw new IllegalStateException(ex);
+    }
+
+    try {
+        // 回调SpringApplicationRunListener的running()方法
+        listeners.running(context);
+    }
+    catch (Throwable ex) {
+        handleRunFailure(context, ex, exceptionReporters, null);
+        throw new IllegalStateException(ex);
+    }
+    return context;
+}
+```
+
+**总结:**
+
+​	**几个重要的事件回调机制**
+
+配置在META-INF/spring.factories
+
+**ApplicationContextInitializer**
+
+**SpringApplicationRunListener**
+
+
+
+只需要放在ioc容器中
+
+**ApplicationRunner**
+
+**CommandLineRunner**
+
+
+
+## 自定义starter
+
+starter：
+
+​	1、这个场景需要使用到的依赖是什么？
+
+​	2、如何编写自动配置
+
+```java
+@Configuration  //指定这个类是一个配置类
+@ConditionalOnXXX  //在指定条件成立的情况下自动配置类生效
+@AutoConfigureAfter  //指定自动配置类的顺序
+@Bean  //给容器中添加组件
+
+@ConfigurationPropertie结合相关xxxProperties类来绑定相关的配置
+@EnableConfigurationProperties //让xxxProperties生效加入到容器中
+
+自动配置类要能加载
+将需要启动就加载的自动配置类，配置在META-INF/spring.factories
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration,\
+org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\
+```
+
+​	3、模式：
+
+启动器只用来做依赖导入；
+
+专门来写一个自动配置模块；
+
+启动器依赖自动配置；别人只需要引入启动器（starter）
+
+mybatis-spring-boot-starter；自定义启动器名-spring-boot-starter
+
+步骤：
+
+1）、启动器模块
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.atguigu.starter</groupId>
+    <artifactId>atguigu-spring-boot-starter</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <!--启动器-->
+    <dependencies>
+
+        <!--引入自动配置模块-->
+        <dependency>
+            <groupId>com.atguigu.starter</groupId>
+            <artifactId>atguigu-spring-boot-starter-autoconfigurer</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
+</project>
+```
+
+2）、自动配置模块
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <groupId>com.atguigu.starter</groupId>
+   <artifactId>atguigu-spring-boot-starter-autoconfigurer</artifactId>
+   <version>0.0.1-SNAPSHOT</version>
+   <packaging>jar</packaging>
+
+   <name>atguigu-spring-boot-starter-autoconfigurer</name>
+   <description>Demo project for Spring Boot</description>
+
+   <parent>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-parent</artifactId>
+      <version>1.5.10.RELEASE</version>
+      <relativePath/> <!-- lookup parent from repository -->
+   </parent>
+
+   <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+      <java.version>1.8</java.version>
+   </properties>
+
+   <dependencies>
+
+      <!--引入spring-boot-starter；所有starter的基本配置-->
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter</artifactId>
+      </dependency>
+
+   </dependencies>
+
+</project>
+
+```
+
+
+
+```java
+package com.atguigu.starter;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "atguigu.hello")
+public class HelloProperties {
+
+    private String prefix;
+    private String suffix;
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public String getSuffix() {
+        return suffix;
+    }
+
+    public void setSuffix(String suffix) {
+        this.suffix = suffix;
+    }
+}
+
+```
+
+```java
+package com.atguigu.starter;
+
+public class HelloService {
+
+    HelloProperties helloProperties;
+
+    public HelloProperties getHelloProperties() {
+        return helloProperties;
+    }
+
+    public void setHelloProperties(HelloProperties helloProperties) {
+        this.helloProperties = helloProperties;
+    }
+
+    public String sayHellAtguigu(String name){
+        return helloProperties.getPrefix()+"-" +name + helloProperties.getSuffix();
+    }
+}
+
+```
+
+```java
+package com.atguigu.starter;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@ConditionalOnWebApplication //web应用才生效
+@EnableConfigurationProperties(HelloProperties.class)
+public class HelloServiceAutoConfiguration {
+
+    @Autowired
+    HelloProperties helloProperties;
+    @Bean
+    public HelloService helloService(){
+        HelloService service = new HelloService();
+        service.setHelloProperties(helloProperties);
+        return service;
+    }
+}
+
+```
