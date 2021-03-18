@@ -17,7 +17,7 @@
     * [@Value](#value)
     * [@Autowired](#autowired)
     * [@Resource（JSR250）](#resourcejsr250)
-    * [@Inject](#inject)
+    * [@Inject（JSR330）](#inject)
     * [Aware注入Spring底层组件和原理](#aware%E6%B3%A8%E5%85%A5spring%E5%BA%95%E5%B1%82%E7%BB%84%E4%BB%B6%E5%92%8C%E5%8E%9F%E7%90%86)
     * [AOP](#aop)
 * [扩展原理](#%E6%89%A9%E5%B1%95%E5%8E%9F%E7%90%86)
