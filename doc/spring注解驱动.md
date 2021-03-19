@@ -1,34 +1,3 @@
-* [容器](#%E5%AE%B9%E5%99%A8)
-  * [组件添加](#%E7%BB%84%E4%BB%B6%E6%B7%BB%E5%8A%A0)
-    * [@Bean](#bean)
-    * [@ComponentScan](#componentscan)
-    * [@Scope](#scope)
-    * [@Lazy](#lazy)
-    * [@Conditional](#conditional)
-    * [@Import](#import)
-    * [FactoryBean](#factorybean)
-  * [bean生命周期](#bean%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F)
-    * [第一种方式\-指定初始化和销毁方法](#%E7%AC%AC%E4%B8%80%E7%A7%8D%E6%96%B9%E5%BC%8F-%E6%8C%87%E5%AE%9A%E5%88%9D%E5%A7%8B%E5%8C%96%E5%92%8C%E9%94%80%E6%AF%81%E6%96%B9%E6%B3%95)
-    * [第二种方式\-实现接口InitializingBean, DisposableBean](#%E7%AC%AC%E4%BA%8C%E7%A7%8D%E6%96%B9%E5%BC%8F-%E5%AE%9E%E7%8E%B0%E6%8E%A5%E5%8F%A3initializingbean-disposablebean)
-    * [第三种方式\-@PostConstruct，@PreDestroy](#%E7%AC%AC%E4%B8%89%E7%A7%8D%E6%96%B9%E5%BC%8F-postconstructpredestroy)
-    * [第四种方式\-实现接口BeanPostProcessor](#%E7%AC%AC%E5%9B%9B%E7%A7%8D%E6%96%B9%E5%BC%8F-%E5%AE%9E%E7%8E%B0%E6%8E%A5%E5%8F%A3beanpostprocessor)
-      * [工作原理](#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86)
-  * [组件赋值](#%E7%BB%84%E4%BB%B6%E8%B5%8B%E5%80%BC)
-    * [@Value](#value)
-    * [@Autowired](#autowired)
-    * [@Resource（JSR250）](#resourcejsr250)
-    * [@Inject（JSR330）](#inject)
-    * [Aware注入Spring底层组件和原理](#aware%E6%B3%A8%E5%85%A5spring%E5%BA%95%E5%B1%82%E7%BB%84%E4%BB%B6%E5%92%8C%E5%8E%9F%E7%90%86)
-    * [AOP](#aop)
-* [扩展原理](#%E6%89%A9%E5%B1%95%E5%8E%9F%E7%90%86)
-  * [BeanFactoryPostProcessor](#beanfactorypostprocessor)
-  * [BeanDefinitionRegistryPostProcessor](#beandefinitionregistrypostprocessor)
-  * [ApplicationListener 和@EventListener](#applicationlistener-%E5%92%8Ceventlistener)
-  * [配置以及原理](#%E9%85%8D%E7%BD%AE%E4%BB%A5%E5%8F%8A%E5%8E%9F%E7%90%86)
-  * [Spring容器创建过程](#spring%E5%AE%B9%E5%99%A8%E5%88%9B%E5%BB%BA%E8%BF%87%E7%A8%8B)
-* [SpringBoot运行原理](#springboot%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86)
-  * [自定义starter](#%E8%87%AA%E5%AE%9A%E4%B9%89starter)
-
 # 容器
 
 ## 组件添加
@@ -1065,7 +1034,7 @@ Spring容器的refresh()方法
 
 # SpringBoot运行原理
 
-1、创建SpringApplication对象
+## 1、创建SpringApplication对象
 
 ```java
 public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
@@ -1084,7 +1053,7 @@ public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySourc
 }
 ```
 
-2、运行run方法
+## 2、运行run方法
 
 ```java
 public ConfigurableApplicationContext run(String... args) {
@@ -1195,7 +1164,7 @@ org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\
 
 mybatis-spring-boot-starter；自定义启动器名-spring-boot-starter
 
-步骤：
+### 步骤：
 
 1）、启动器模块
 
