@@ -752,7 +752,9 @@ public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
 ```java
 @Component
 public class MyBeanDefinitionRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor{
-    // bean定义信息的保存中心
+    /**
+     * bean定义信息的保存中心,以后BeanFactory就是按照BeanDefinitionRegistry里面保存的每一个bean定义信息创建bean实例
+     */
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         System.out.println("postProcessBeanDefinitionRegistry..bean的数量: " + registry.getBeanDefinitionCount());
@@ -771,7 +773,10 @@ public class MyBeanDefinitionRegistryPostProcessor implements BeanDefinitionRegi
 
 ```java
 @Component
-public class MyApplicationListener implements ApplicationListener {
+public class MyApplicationListener implements ApplicationListener<ApplicationEvent> {
+    /**
+     * 当容器中发布此事件以后，方法触发
+     */
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         System.out.println("MyApplicationListener监听到事件: " + event);
@@ -793,14 +798,6 @@ public class UserService {
 ## 配置以及原理
 
 ```java
-package com.atguigu.ext;
-
-import com.atguigu.bean.Blue;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
-
 /**
  * 1.BeanFactoryPostProcessor:beanFactory的后置处理器
  *          在BeanFactory标准化之后调用,来定制和修改BeanFactory的内容,
@@ -832,20 +829,22 @@ import org.springframework.stereotype.Component;
  *
  *  步骤:
  *      1.写一个监听器来监听某个事件(ApplicationEvent及其子类)
+ *            @EventListener -> SmartInitializingSingleton
  *      2.把监听器加入到容器
  *      3.只要容器有相关事件的发布,我们就能监听到这个事件
  *          ContextRefreshedEvent:容器刷新完成(所有bean都完全创建)会发布这个事件
  *          ContextClosedEvent:关闭容器会发布这个事件
  *      4.发布一个事件applicationContext.publishEvent();
  *  原理:
- *      1.ContextRefreshedEvent事件
+ *      1.ContextRefreshedEvent、ContextClosedEvent事件
  *          1.refresh();
  *          2.finishRefresh();
+ *          3.publishEvent(new ContextRefreshedEvent(this));
  *      2.自己发布事件
  *      3.容器关闭事件
  *          事件发布流程:
  *          3.publishEvent(new ContextRefreshedEvent(this));
- *                  1.获取事件的多播器,getApplicationEventMulticaster();
+ *                  1.获取事件的多播器（派发器）,getApplicationEventMulticaster();
  *                  2.getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);
  *                  3.获取所有的监听器
  *                      for (final ApplicationListener<?> listener : getApplicationListeners(event, type))
@@ -864,7 +863,7 @@ import org.springframework.stereotype.Component;
  *   容器中有哪些监听器:
  *      1.refresh():
  *      2.registerListeners();
- *          从容器中拿到所有监听器,getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
+ *          从容器中拿到所有监听器,注册到派发器中。getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
  *          String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
  *
  *  SmartInitializingSingleton原理:
@@ -928,12 +927,12 @@ Spring容器的refresh()方法
 			postProcessor.postProcessBeanDefinitionRegistry(registry);
 		再执行BeanFactoryPostProcessor方法
 		1、获取所有的BeanFactoryPostProcessor
-    	2、看先执行实现了PriorityOrdered优先级接口的BeanDefinitionRegistryPostProcessor,
-			postProcessor.postProcessBeanDefinitionRegistry(registry);
-		3、再执行实现了Ordered顺序接口的BeanDefinitionRegistryPostProcessor,
-			postProcessor.postProcessBeanDefinitionRegistry(registry);
-		4、最后执行没有实现任何优先级或者是顺序接口的BeanDefinitionRegistryPostProcessor,
-			postProcessor.postProcessBeanDefinitionRegistry(registry);
+    	2、看先执行实现了PriorityOrdered优先级接口的BeanFactoryPostProcessor,
+			postProcessor.postProcessBeanFactory(beanFactory);
+		3、再执行实现了Ordered顺序接口的BeanFactoryPostProcessor,
+			postProcessor.postProcessBeanFactory(beanFactory);
+		4、最后执行没有实现任何优先级或者是顺序接口的BeanFactoryPostProcessor,
+			postProcessor.postProcessBeanFactory(beanFactory);
 6、registerBeanPostProcessors(beanFactory);注册BeanPostProcessor(Bean的后置处理器)
     不同接口类型的BeanPostProcessor,在Bean创建前后的执行时机是不一样的
     BeanPostProcessor、
@@ -951,7 +950,7 @@ Spring容器的refresh()方法
 	6、注册一个ApplicationListenerDetector,来在Bean创建完成后检查是否是ApplicationListener,如果是this.applicationContext.addApplicationListener((ApplicationListener<?>) bean);
 7、initMessageSource();初始化MessageSource组件(做国家化功能;消息绑定,消息解析)
     1、getBeanFactory();
-	2、看容器中是否有id为messageSource的组件,类型时MessageSource的组件
+	2、看容器中是否有id为messageSource的组件,类型是MessageSource的组件
 		如果有赋值给messageSource,如果没有自己创建一个DelegatingMessageSource
 			MessageSource:取出国际化配置文件中的某个key值,能按照区域信息获取
 	3、把创建好的MessageSource注册到容器中，以后获取国际化配置文件的值的时候,可以自动注入MessageSource

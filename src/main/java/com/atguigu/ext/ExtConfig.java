@@ -37,20 +37,22 @@ import org.springframework.stereotype.Component;
  *
  *  步骤:
  *      1.写一个监听器来监听某个事件(ApplicationEvent及其子类)
+ *            @EventListener -> SmartInitializingSingleton
  *      2.把监听器加入到容器
  *      3.只要容器有相关事件的发布,我们就能监听到这个事件
  *          ContextRefreshedEvent:容器刷新完成(所有bean都完全创建)会发布这个事件
  *          ContextClosedEvent:关闭容器会发布这个事件
  *      4.发布一个事件applicationContext.publishEvent();
  *  原理:
- *      1.ContextRefreshedEvent事件
+ *      1.ContextRefreshedEvent、ContextClosedEvent事件
  *          1.refresh();
  *          2.finishRefresh();
+ *          3.publishEvent(new ContextRefreshedEvent(this));
  *      2.自己发布事件
  *      3.容器关闭事件
  *          事件发布流程:
  *          3.publishEvent(new ContextRefreshedEvent(this));
- *                  1.获取事件的多播器,getApplicationEventMulticaster();
+ *                  1.获取事件的多播器（派发器）,getApplicationEventMulticaster();
  *                  2.getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);
  *                  3.获取所有的监听器
  *                      for (final ApplicationListener<?> listener : getApplicationListeners(event, type))
@@ -69,7 +71,7 @@ import org.springframework.stereotype.Component;
  *   容器中有哪些监听器:
  *      1.refresh():
  *      2.registerListeners();
- *          从容器中拿到所有监听器,getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
+ *          从容器中拿到所有监听器,注册到派发器中。getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
  *          String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
  *
  *  SmartInitializingSingleton原理:
