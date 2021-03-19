@@ -27,7 +27,16 @@
 - [@Resource（JSR250）](https://github.com/jackhusky/spring_anotation/blob/master/doc/spring%E6%B3%A8%E8%A7%A3%E9%A9%B1%E5%8A%A8.md#resourcejsr250)
 - [@Inject（JSR330）](https://github.com/jackhusky/spring_anotation/blob/master/doc/spring%E6%B3%A8%E8%A7%A3%E9%A9%B1%E5%8A%A8.md#injectjsr330)
 - [Aware注入Spring底层组件和原理](https://github.com/jackhusky/spring_anotation/blob/master/doc/spring%E6%B3%A8%E8%A7%A3%E9%A9%B1%E5%8A%A8.md#aware%E6%B3%A8%E5%85%A5spring%E5%BA%95%E5%B1%82%E7%BB%84%E4%BB%B6%E5%92%8C%E5%8E%9F%E7%90%86)
-- [AOP](https://github.com/jackhusky/spring_anotation/blob/master/doc/spring%E6%B3%A8%E8%A7%A3%E9%A9%B1%E5%8A%A8.md#aop)
+
+### AOP
+
+- 切面类
+- 逻辑类
+- 配置以及原理
+
+### 声明式事务
+
+
 
 ## 扩展原理
 
