@@ -30,13 +30,16 @@
 
 ### AOP
 
-- 切面类
-- 逻辑类
-- 配置以及原理
+- [切面类](https://github.com/jackhusky/spring_anotation/blob/master/doc/spring%E6%B3%A8%E8%A7%A3%E9%A9%B1%E5%8A%A8.md#%E5%88%87%E9%9D%A2%E7%B1%BB)
+- [逻辑类](https://github.com/jackhusky/spring_anotation/blob/master/doc/spring%E6%B3%A8%E8%A7%A3%E9%A9%B1%E5%8A%A8.md#%E9%80%BB%E8%BE%91%E7%B1%BB)
+- [配置以及原理](https://github.com/jackhusky/spring_anotation/blob/master/doc/spring%E6%B3%A8%E8%A7%A3%E9%A9%B1%E5%8A%A8.md#%E9%85%8D%E7%BD%AE%E4%BB%A5%E5%8F%8A%E5%8E%9F%E7%90%86)
 
 ### 声明式事务
 
+- 持久层
 
+- 服务层
+- 配置以及原理
 
 ## 扩展原理
 
